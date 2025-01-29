@@ -22,10 +22,30 @@ class Player(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.x = WIDTH//2
         self.rect.y = HEIGHT - 30
-        self.speedx = 2
+        self.speedx = 8
         self.speedy = 3
     def update(self):
-
+        k = pygame.key.get_pressed()
+        if k[pygame.K_d]:
+            self.rect.x += self.speedx
+            if self.rect.x >= WIDTH:
+                self.rect.right = WIDTH
+        if k[pygame.K_a]:
+            self.rect.x -= self.speedx
+            if self.rect.left <= 0:
+                self.rect.left = 0
+class Meteor(pygame.sprite.Sprite):
+    def __init__(self):
+        pygame.sprite.Sprite.__init__(self)
+        self.height = 10
+        self.width = 10
+        self.image = pygame.Surface((self.height,self.width))
+        self.rect = self.image.get_rect()
+        self.rect.x = random.randint(0,WIDTH)
+        self.rect.y = -1*HEIGHT
+        self.speedy = 6
+    def update(self):
+        self.rect.y += self.speedy
 # initialize pygame and create window
 pygame.init()
 #pygame.mixer.init()
@@ -36,7 +56,10 @@ clock = pygame.time.Clock()
 all_sprites = pygame.sprite.Group()
 
 ship = Player()
+meteor = Meteor()
+
 all_sprites.add(ship)
+all_sprites.add(meteor)
 
 # Game loop
 running = True
@@ -56,5 +79,3 @@ while running:
     all_sprites.draw(screen)
     # *after* drawing everything, flip the display
     pygame.display.flip()
-
-pygame.quit()
