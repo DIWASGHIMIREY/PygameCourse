@@ -12,7 +12,23 @@ RED = (255, 0, 0)
 GREEN = (0, 255, 0)
 BLUE = (0, 0, 255)
 
+class Bullet(pygame.sprite.Sprite):
+    def __init__(self,x,y):
+        pygame.sprite.Sprite.__init__(self)
+        self.height = 20
+        self.width = 10
+        self.image = pygame.Surface((self.width,self.height))
+        self.image.fill(RED)
+        self.rect = self.image.get_rect()
+        self.rect.centerx = x
+        self.rect.bottom = y
+        self.speedy = 3
+
+    def update(self):
+            self.rect.y -= self.speedy
+
 class Player(pygame.sprite.Sprite):
+
     def __init__(self):
         pygame.sprite.Sprite.__init__(self)
         self.height = 40
@@ -24,6 +40,17 @@ class Player(pygame.sprite.Sprite):
         self.rect.y = HEIGHT - (self.height+5)
         self.speedx = 8
         self.speedy = 3
+        self.last_shot = pygame.time.get_ticks()
+        self.shoot_delay = 300
+
+    def shoot(self):
+        now = pygame.time.get_ticks()
+        if now - self.last_shot > self.shoot_delay:
+            self.last_shot = now
+            bullet = Bullet(self.rect.centerx, self.rect.top)
+            all_sprites.add(bullet)
+            bullets = pygame.sprite.Group()
+            bullets.add(bullet)
 
     def update(self):
         k = pygame.key.get_pressed()
@@ -36,6 +63,8 @@ class Player(pygame.sprite.Sprite):
             self.rect.x -= self.speedx
             if self.rect.left <= 0:
                 self.rect.left = 0
+        if k[pygame.K_SPACE]:
+            self.shoot()
 
 
 class Meteor(pygame.sprite.Sprite):
@@ -56,6 +85,7 @@ class Meteor(pygame.sprite.Sprite):
             self.kill()
 
 
+
 pygame.init()
 
 
@@ -65,6 +95,7 @@ clock = pygame.time.Clock()
 
 all_sprites = pygame.sprite.Group()
 meteors = pygame.sprite.Group()
+
 
 ship = Player()
 all_sprites.add(ship)
