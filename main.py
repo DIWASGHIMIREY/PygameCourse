@@ -20,14 +20,6 @@ def draw_text(surf,text,size,x,y,color):
     text_rect.midtop = (x,y)
     surf.blit(text_surface,text_rect)
 
-
-def newmob():
-    meteors = pygame.sprite.Group()
-    meteor = Meteor()
-    meteors.add(meteor)
-    all_sprites.add(meteor)
-
-
 class Bullet(pygame.sprite.Sprite):
     def __init__(self,pos1,pos2):
         pygame.sprite.Sprite.__init__(self,)
@@ -59,7 +51,7 @@ class Player(pygame.sprite.Sprite):
         self.last_shot = pygame.time.get_ticks()
         self.shoot_delay = 300
         self.score = 0
-        self.health = 5
+        self.health = 100
 
     def shoot(self):
         now = pygame.time.get_ticks()
@@ -67,7 +59,6 @@ class Player(pygame.sprite.Sprite):
             self.last_shot = now
             bullet = Bullet(self.rect.centerx,self.rect.top)
             all_sprites.add(bullet)
-            bullets = pygame.sprite.Group()
             bullets.add(bullet)
 
     def update(self):
@@ -88,8 +79,8 @@ class Player(pygame.sprite.Sprite):
 class Meteor(pygame.sprite.Sprite):
     def __init__(self):
         pygame.sprite.Sprite.__init__(self)
-        self.height = 10
-        self.width = 10
+        self.height = 30
+        self.width = 30
         self.image = pygame.Surface((self.height,self.width))
         self.image.fill(WHITE)
         self.rect = self.image.get_rect()
@@ -102,9 +93,7 @@ class Meteor(pygame.sprite.Sprite):
         if self.rect.top > HEIGHT:
             self.kill()
 
-
 pygame.init()
-
 
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Space Invaders")
@@ -141,11 +130,10 @@ while running:
     hit_mob = pygame.sprite.groupcollide(meteors,bullets,True,True)
     if hit_player:
         ship.health -= 1
-        newmob()
         if ship.health >= 0:
-            pass
+            ship.health = 100
     if hit_mob:
-        pass
+        ship.score += 1
 
     all_sprites.update()
 
