@@ -12,16 +12,32 @@ RED = (255, 0, 0)
 GREEN = (0, 255, 0)
 BLUE = (0, 0, 255)
 
+font_name = pygame.font.match_font("arial")
+def draw_text(surf,text,size,x,y,color):
+    font = pygame.font.Font(font_name,size)
+    text_surface = font.render(text,True,color)
+    text_rect = text_surface.get_rect()
+    text_rect.midtop = (x,y)
+    surf.blit(text_surface,text_rect)
+
+
+def newmob():
+    meteors = pygame.sprite.Group()
+    meteor = Meteor()
+    meteors.add(meteor)
+    all_sprites.add(meteor)
+
+
 class Bullet(pygame.sprite.Sprite):
-    def __init__(self,x,y):
-        pygame.sprite.Sprite.__init__(self)
+    def __init__(self,pos1,pos2):
+        pygame.sprite.Sprite.__init__(self,)
         self.height = 20
         self.width = 10
         self.image = pygame.Surface((self.width,self.height))
         self.image.fill(RED)
         self.rect = self.image.get_rect()
-        self.rect.centerx = x
-        self.rect.bottom = y
+        self.rect.centerx = pos1
+        self.rect.bottom = pos2
         self.speedy = 3
 
     def update(self):
@@ -42,12 +58,14 @@ class Player(pygame.sprite.Sprite):
         self.speedy = 3
         self.last_shot = pygame.time.get_ticks()
         self.shoot_delay = 300
+        self.score = 0
+        self.health = 5
 
     def shoot(self):
         now = pygame.time.get_ticks()
         if now - self.last_shot > self.shoot_delay:
             self.last_shot = now
-            bullet = Bullet(self.rect.centerx, self.rect.top)
+            bullet = Bullet(self.rect.centerx,self.rect.top)
             all_sprites.add(bullet)
             bullets = pygame.sprite.Group()
             bullets.add(bullet)
@@ -85,7 +103,6 @@ class Meteor(pygame.sprite.Sprite):
             self.kill()
 
 
-
 pygame.init()
 
 
@@ -95,10 +112,11 @@ clock = pygame.time.Clock()
 
 all_sprites = pygame.sprite.Group()
 meteors = pygame.sprite.Group()
-
+bullets = pygame.sprite.Group()
 
 ship = Player()
 all_sprites.add(ship)
+
 
 meteor_spawn_delay = 500
 last_meteor_spawn = pygame.time.get_ticks()
@@ -119,12 +137,22 @@ while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
-
+    hit_player =  pygame.sprite.spritecollide(ship,meteors,True)
+    hit_mob = pygame.sprite.groupcollide(meteors,bullets,True,True)
+    if hit_player:
+        ship.health -= 1
+        newmob()
+        if ship.health >= 0:
+            pass
+    if hit_mob:
+        pass
 
     all_sprites.update()
 
     screen.fill(BLACK)
     all_sprites.draw(screen)
+    draw_text(screen,str(ship.score),32,WIDTH//4,10,WHITE)
+    draw_text(screen, str(ship.health), 32, (WIDTH // 2.5), 10, WHITE)
 
 
     pygame.display.flip()
