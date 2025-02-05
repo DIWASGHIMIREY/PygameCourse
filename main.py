@@ -140,7 +140,7 @@ while running:
     screen.fill(BLACK)
     all_sprites.draw(screen)
     draw_text(screen,str(ship.score),32,WIDTH//4,10,WHITE)
-    draw_text(screen, str(ship.health), 32, (WIDTH // 2.5), 10, WHITE)
+    draw_text(screen, str(ship.health), 32, (WIDTH // 2.5) + (WIDTH//2.5), 10, WHITE)
 
 
     pygame.display.flip()
