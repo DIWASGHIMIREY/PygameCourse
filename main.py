@@ -4,7 +4,7 @@ import random
 WIDTH = 800
 HEIGHT = 800
 FPS = 30
-MAX_HP = 100
+MAX_HP = 50
 
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
@@ -38,7 +38,7 @@ class Bullet(pygame.sprite.Sprite):
         # self.image = pygame.Surface((self.width,self.height))
         # self.image.fill(RED)
 
-        self.image = pygame.image.load('All Game Art/laserBlue03.png')
+        self.image = pygame.image.load('All Files/laserBlue03.png')
         self.image = pygame.transform.scale(self.image, (self.width, self.height))
 
         self.rect = self.image.get_rect()
@@ -59,7 +59,7 @@ class Player(pygame.sprite.Sprite):
         # self.image = pygame.Surface((self.width,self.height))
         # self.image.fill(WHITE)
 
-        self.image = pygame.image.load('All Game Art/playerShip1_orange.png')
+        self.image = pygame.image.load('All Files/playerShip1_orange.png')
         self.image = pygame.transform.scale(self.image, (self.width,self.height))
         self.rect = self.image.get_rect()
 
@@ -73,7 +73,7 @@ class Player(pygame.sprite.Sprite):
         self.last_reload = pygame.time.get_ticks()
 
 
-        self.shoot_delay = 300
+        self.shoot_delay = 500
         self.reload_time = 2500
 
         self.reloading = False
@@ -106,6 +106,7 @@ class Player(pygame.sprite.Sprite):
 
             bullets.add(bullet)
             self.ammo -= 1
+            shoot_sound.play()
 
     def update(self):
         k = pygame.key.get_pressed()
@@ -135,7 +136,7 @@ class Meteor(pygame.sprite.Sprite):
         # self.image.fill(WHITE)
 
         for i in range(1,11):
-            filename = pygame.image.load(f'All Game Art/Meteor Sprites/meteor{i}.png')
+            filename = pygame.image.load(f'All Files/Meteor Sprites/meteor{i}.png')
             self.image_list.append(filename)
         self.image = random.choice(self.image_list)
         self.rect = self.image.get_rect()
@@ -150,9 +151,14 @@ class Meteor(pygame.sprite.Sprite):
             self.kill()
 
 pygame.init()
+pygame.mixer.init()
 
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Space Invaders")
+
+icon = pygame.image.load("All Files/gameicon.png")
+pygame.display.set_icon(icon)
+
 clock = pygame.time.Clock()
 
 all_sprites = pygame.sprite.Group()
@@ -168,13 +174,30 @@ all_sprites.add(ship)
 meteor_spawn_delay = 500
 last_meteor_spawn = pygame.time.get_ticks()
 
-background = pygame.image.load('All Game Art/starfield.png')
+background = pygame.image.load('All Files/starfield.png')
 background = pygame.transform.scale(background, (WIDTH,HEIGHT))
 
 background_rect = background.get_rect()
+pygame.mixer.music.load('All Files/Audio/background_audio.wav')
+pygame.mixer.music.play(-1)
+
+shoot_sound = pygame.mixer.Sound('All Files/Audio/laser_fire.wav')
+
+explosion_sound_list = []
+for i in range(1, 10):
+    soundfile = pygame.mixer.Sound(f'All Files/Audio/Explosions/boom{i}.wav')
+    explosion_sound_list.append(soundfile)
+
+shoot_sound.set_volume(0.05)
+pygame.mixer.music.set_volume(0.05)
+
+for sound in explosion_sound_list:
+    sound.set_volume(0.05)
+
 
 running = True
 game_over = False
+
 while running:
     clock.tick(FPS)
     current_time = pygame.time.get_ticks()
@@ -195,13 +218,15 @@ while running:
                     bullets.empty()
                     all_sprites.add(ship)
                     game_over = False
-                if event.key == pygame.K_ESCAPE:
+                if event.key == pygame.K_q:
                     running = False
     if game_over:
+        pygame.mixer.music.stop()
         screen.fill(BLACK)
-        draw_text(screen, "GAME OVER", 64, WIDTH // 2, HEIGHT // 2, RED)
-        draw_text(screen, "Press SPACE to Restart", 32, WIDTH // 2, (HEIGHT // 2) + 50, RED)
-        draw_text(screen, "Press ESC to Quit", 32, WIDTH // 2, (HEIGHT // 2) + 100, RED)
+        draw_text(screen, "GAME OVER", 64, WIDTH // 2, HEIGHT // 2.5, RED)
+        draw_text(screen, "Press SPACE to Restart", 32, WIDTH // 2, (HEIGHT // 2.5) - 20, RED)
+        draw_text(screen, "Press Q to Quit", 32, WIDTH // 2, (HEIGHT // 2.5) + 55, RED)
+        pygame.display.flip()
     else:
 
         if current_time - last_meteor_spawn > meteor_spawn_delay:
@@ -216,8 +241,6 @@ while running:
         hit_mob = pygame.sprite.groupcollide(meteors,bullets,True,True)
 
 
-
-
         if hit_player:
             ship.health -= 5
             if ship.health <= 0:
@@ -228,6 +251,7 @@ while running:
 
         if hit_mob:
             ship.score += 5
+            explosion_sound = random.choice(explosion_sound_list).play()
 
 
         all_sprites.update()
