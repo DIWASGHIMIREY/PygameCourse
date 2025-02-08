@@ -254,6 +254,7 @@ while running:
             explosion_sound = random.choice(explosion_sound_list).play()
 
 
+
         all_sprites.update()
 
         screen.blit(background, background_rect)
