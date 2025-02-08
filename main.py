@@ -74,7 +74,7 @@ class Player(pygame.sprite.Sprite):
 
 
         self.shoot_delay = 300
-        self.reload_time = 1000
+        self.reload_time = 2500
 
         self.reloading = False
 
@@ -135,7 +135,7 @@ class Meteor(pygame.sprite.Sprite):
         # self.image.fill(WHITE)
 
         for i in range(1,11):
-            filename = pygame.image.load(f'All Game Art/meteor{i}.png')
+            filename = pygame.image.load(f'All Game Art/Meteor Sprites/meteor{i}.png')
             self.image_list.append(filename)
         self.image = random.choice(self.image_list)
         self.rect = self.image.get_rect()
