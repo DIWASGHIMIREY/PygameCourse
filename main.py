@@ -5,13 +5,15 @@ WIDTH = 800
 HEIGHT = 800
 FPS = 30
 MAX_HP = 50
+MAX_MANA = 50
 
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
 RED = (255, 0, 0)
 GREEN = (0, 255, 0)
 BLUE = (0, 0, 255)
-
+YELLOW = (231,200,100)
+IDK = (23,143,251)
 font_name = pygame.font.match_font("arial")
 def draw_text(surf,text,size,x,y,color):
     font = pygame.font.Font(font_name,size)
@@ -28,17 +30,27 @@ def newmob():
     meteors.add(r)
 
     all_sprites.add(r)
+class Power(pygame.sprite.Sprite):
+    def __init__(self):
+        pygame.sprite.Sprite.__init__(self)
+        self.height = 20
+        self.width = 20
+
+
+        self.image = pygame.Surface((self.width,self.height))
+        self.image.fill(IDK)
+        self.rect = self.image.get_rect()
 
 class Bullet(pygame.sprite.Sprite):
     def __init__(self,pos1,pos2):
-        pygame.sprite.Sprite.__init__(self,)
+        pygame.sprite.Sprite.__init__(self)
         self.height = 20
         self.width = 10
-
+        self.initial_dmg = 1
         # self.image = pygame.Surface((self.width,self.height))
         # self.image.fill(RED)
 
-        self.image = pygame.image.load('All Files/laserBlue03.png')
+        self.image = pygame.image.load('All Files/bullet.png')
         self.image = pygame.transform.scale(self.image, (self.width, self.height))
 
         self.rect = self.image.get_rect()
@@ -47,19 +59,62 @@ class Bullet(pygame.sprite.Sprite):
         self.speedy = 3
 
     def update(self):
-            self.rect.y -= self.speedy
+        self.rect.y -= self.speedy
+        if self.rect.bottom <= 0:
+            self.kill()
+
+class StatusBar(pygame.sprite.Sprite):
+    def __init__(self, player):
+        pygame.sprite.Sprite.__init__(self)
+        self.player = player
+
+        self.health_full = pygame.image.load('Art/GUI/Health_Full.png')
+        self.health_empty = pygame.image.load('Art/GUI/Health_Empty.png')
+        self.mana_full = pygame.image.load('Art/GUI/Mana_Full.png')
+        self.mana_empty = pygame.image.load('Art/GUI/Mana_Empty.png')
+
+        self.bar_width = 45
+        self.bar_height = 250
+
+        self.margin = 5
+        self.spacing = -5
+
+        self.health_x = WIDTH - self.margin - self.bar_width
+        self.mana_x = self.health_x - self.bar_width - self.spacing
+
+        self.y = HEIGHT - self.bar_height - self.margin
+
+    def draw_bar(self, surface, full_image, empty_image, current, max_value, x, y, scale_factor=0.5):
+        if max_value == 0:
+            return
+
+        new_width = int(empty_image.get_width() * scale_factor)
+        new_height = int(empty_image.get_height() * scale_factor)
+
+        empty_image = pygame.transform.scale(empty_image, (new_width, new_height))
+        full_image = pygame.transform.scale(full_image, (new_width, new_height))
+
+        filled_height = int(new_height * (current / max_value))
+        filled_bar = full_image.subsurface((0, new_height - filled_height, new_width, filled_height))
+
+        surface.blit(empty_image, (x, y))
+        surface.blit(filled_bar, (x, y + (new_height - filled_height)))
+
+    def update(self, screen):
+        self.draw_bar(screen, self.health_full, self.health_empty, self.player.health, MAX_HP, self.health_x, self.y)
+        self.draw_bar(screen, self.mana_full, self.mana_empty, self.player.mana, MAX_MANA, self.mana_x, self.y)
 
 class Player(pygame.sprite.Sprite):
 
     def __init__(self):
         pygame.sprite.Sprite.__init__(self)
         self.height = 40
-        self.width = 15
+        self.width = 25
 
         # self.image = pygame.Surface((self.width,self.height))
         # self.image.fill(WHITE)
 
-        self.image = pygame.image.load('All Files/playerShip1_orange.png')
+        self.image = pygame.image.load('All Files/player.png')
         self.image = pygame.transform.scale(self.image, (self.width,self.height))
         self.rect = self.image.get_rect()
 
@@ -67,11 +122,10 @@ class Player(pygame.sprite.Sprite):
         self.rect.x = WIDTH//2
         self.rect.y = HEIGHT - (self.height+5)
         self.speedx = 8
-        self.speedy = 3
+        # self.speedy = 3
 
         self.last_shot = pygame.time.get_ticks()
         self.last_reload = pygame.time.get_ticks()
-
 
         self.shoot_delay = 500
         self.reload_time = 2500
@@ -82,13 +136,14 @@ class Player(pygame.sprite.Sprite):
         self.ammo = 40
         self.max_ammo = 40
         self.health = MAX_HP
+        self.mana = MAX_MANA
         self.lives = 5
 
     def shoot(self):
-        now = pygame.time.get_ticks()
+        self.now = pygame.time.get_ticks()
 
         if self.reloading:
-            if now - self.last_reload > self.reload_time:
+            if self.now - self.last_reload > self.reload_time:
                 self.ammo = self.max_ammo
                 self.reloading = False
             return
@@ -96,10 +151,10 @@ class Player(pygame.sprite.Sprite):
         if self.ammo <= 0:
             self.ammo = 0
             self.reloading = True
-            self.last_reload = now
+            self.last_reload = self.now
 
-        if now - self.last_shot > self.shoot_delay:
-            self.last_shot = now
+        if self.now - self.last_shot > self.shoot_delay:
+            self.last_shot = self.now
 
             bullet = Bullet(self.rect.centerx,self.rect.top)
             all_sprites.add(bullet)
@@ -131,6 +186,8 @@ class Meteor(pygame.sprite.Sprite):
         self.height = 30
         self.width = 30
         self.image_list = []
+        self.lives = random.randint(1,3)
+        self.k = False
 
         # self.image = pygame.Surface((self.height,self.width))
         # self.image.fill(WHITE)
@@ -148,6 +205,11 @@ class Meteor(pygame.sprite.Sprite):
     def update(self):
         self.rect.y += self.speedy
         if self.rect.top > HEIGHT:
+            self.kill()
+        if self.lives <= 0:
+            ship.score += 5
+            self.k = True
+        if self.k:
             self.kill()
 
 pygame.init()
@@ -170,6 +232,8 @@ r = Meteor()
 ship = Player()
 
 all_sprites.add(ship)
+
+status_bar = StatusBar(ship)
 
 meteor_spawn_delay = 500
 last_meteor_spawn = pygame.time.get_ticks()
@@ -238,7 +302,7 @@ while running:
                 running = False
 
         hit_player =  pygame.sprite.spritecollide(ship,meteors,True)
-        hit_mob = pygame.sprite.groupcollide(meteors,bullets,True,True)
+        hit_mob = pygame.sprite.groupcollide(meteors,bullets,False,True)
 
 
         if hit_player:
@@ -250,7 +314,8 @@ while running:
                     game_over = True
 
         if hit_mob:
-            ship.score += 5
+            for mob in hit_mob:
+                mob.lives -= 1
             explosion_sound = random.choice(explosion_sound_list).play()
 
 
@@ -260,11 +325,12 @@ while running:
         screen.blit(background, background_rect)
         all_sprites.draw(screen)
 
-        draw_text(screen, f"Score: {ship.score}", 32, WIDTH // 4, 10, WHITE)
-        draw_text(screen, f"HP: {ship.health}", 32, WIDTH // 2, 10, WHITE)
+        status_bar.update(screen)
+
+        draw_text(screen, f"Score: {ship.score}", 32, (WIDTH // 4) - 100, 10, YELLOW)
 
         draw_text(screen, f"Lives: {ship.lives}", 32, WIDTH - 100, 10, WHITE)
-        draw_text(screen, f"{ship.ammo}/40", 32, WIDTH - 100, HEIGHT - 50, WHITE)
+        draw_text(screen, f"{ship.ammo}/40", 32, 50, HEIGHT - 50, WHITE)
 
         if ship.reloading:
             draw_text(screen, "RELOADING...", 32, WIDTH // 2, HEIGHT - 40, RED)
