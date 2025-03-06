@@ -32,6 +32,50 @@ def newmob():
     meteors.add(r)
 
     all_sprites.add(r)
+
+class Explosion(pygame.sprite.Sprite):
+    def __init__(self, center, size):
+        pygame.sprite.Sprite.__init__(self)
+        self.width = 40
+        self.height = 40
+        self.size = size
+        # Need shooting
+        self.expl_anim = {}
+        self.expl_anim['sm'] = []
+        self.expl_anim['lg'] = []
+        self.load_image()
+        self.image = pygame.Surface((self.width, self.height))
+
+        self.rect = self.image.get_rect()
+        self.rect.center = center
+
+        self.frame_rate = 75
+        self.frame = 0
+        self.last_update = pygame.time.get_ticks()
+
+    def load_image(self):
+        for i in range(1, 9):
+            filename = f'All Files/Explosions/explosion{i}.png'
+            img = pygame.image.load(filename)
+            img_sm = pygame.transform.scale(img, (32, 32))
+            self.expl_anim['sm'].append(img_sm)
+            img_sm = pygame.transform.scale(img, (150, 150))
+            self.expl_anim['lg'].append(img_sm)
+
+    def update(self):
+        now = pygame.time.get_ticks()
+        if now - self.last_update > self.frame_rate:
+            self.last_update = now
+            self.frame += 1
+            if self.frame == len(self.expl_anim[self.size]):
+                self.kill()
+        else:
+            center = self.rect.center
+            self.image = self.expl_anim[self.size][self.frame]
+            self.rect = self.image.get_rect()
+            self.rect.center = center
+
+
 class Power(pg.sprite.Sprite):
     def __init__(self):
         pg.sprite.Sprite.__init__(self)
@@ -75,16 +119,16 @@ class StatusBar(pg.sprite.Sprite):
         self.mana_full = pg.image.load('All Files/Art/GUI/Mana_Full.png')
         self.mana_empty = pg.image.load('All Files/Art/GUI/Mana_Empty.png')
 
-        self.bar_width = 45
-        self.bar_height = 250
+        self.bar_width = 250
+        self.bar_height = 45
 
         self.margin = 5
-        self.spacing = -5
+        self.spacing = (WIDTH//4) + 305
 
-        self.health_x = WIDTH - self.margin - self.bar_width
+        self.health_x = (WIDTH + 207) - self.margin - self.bar_width
         self.mana_x = self.health_x - self.bar_width - self.spacing
 
-        self.y = HEIGHT - self.bar_height - self.margin
+        self.y = ((HEIGHT//8) - 50) - self.bar_height - self.margin
 
     def draw_bar(self, surface, full_image, empty_image, current, max_value, x, y, scale_factor=0.5):
         if max_value == 0:
@@ -339,6 +383,8 @@ while running:
 
 
         if hit_player:
+            expl = Explosion(plr.rect.midtop,'sm')
+            all_sprites.add(expl)
             plr.health -= 5
             if plr.health <= 0:
                 plr.health = MAX_HP
@@ -349,8 +395,11 @@ while running:
         if hit_mob:
             for mob in hit_mob:
                 mob.lives -= 1
+
                 mob.explosion_sound = random.choice(mob.explosion_sound_list).play()
                 if mob.lives <= 0:
+                    expl = Explosion(mob.rect.center, 'lg')
+                    all_sprites.add(expl)
                     pow = Powerup(mob.rect.centerx,mob.rect.centery)
                     if pow.rndm >= pow.spawn_percent:
                         pow.spawn = True
