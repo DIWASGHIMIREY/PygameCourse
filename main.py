@@ -107,12 +107,11 @@ class StatusBar(pg.sprite.Sprite):
         self.draw_bar(screen, self.mana_full, self.mana_empty, self.player.mana, MAX_MANA, self.mana_x, self.y)
 
 class Player(pg.sprite.Sprite):
-    def __init__(self, pw_checker):
+    def __init__(self):
         pg.sprite.Sprite.__init__(self)
         self.height = 40
         self.width = 25
         self.pw = [1,2,3]
-        self.check = pw_checker
 
         # self.image = pg.Surface((self.width,self.height))
         # self.image.fill(WHITE)
@@ -141,14 +140,6 @@ class Player(pg.sprite.Sprite):
         self.health = MAX_HP
         self.mana = MAX_MANA
         self.lives = 5
-        
-    def power(self):
-        if self.check == 1:
-            pass
-        elif self.check == 2:
-            pass
-        elif self.check == 3:
-            pass
 
     def shoot(self):
         self.now = pg.time.get_ticks()
@@ -232,21 +223,25 @@ class Meteor(pg.sprite.Sprite):
             self.kill()
 
 class Powerup(pg.sprite.Sprite):
-  def __init__(self):
+  def __init__(self,x,y):
     pg.sprite.Sprite.__init__(self)
-    self.width = 60
-    self.height = 30
+    self.width = 20
+    self.height = 20
     self.image= pg.Surface((self.width,self.height))
     self.image.fill(WHITE)
 
-    self.rect = self.image.get_rect()
-    self.rect.x = random.randrange(-400,-100)
-    self.rect.y = random.randrange(250,350)
+    self.spawn_percent = 0.9
+    self.spawn = False
+
+    self.rndm = random.randrange(0,1)
+
+
+
+    self.rect = self.image.get_rect(center=(x,y))
     self.speedx=random.randrange(3,8)
-    self.speedy=0
+    self.speedy=2
 
   def update(self):
-    self.rect.x += self.speedx
     self.rect.y += self.speedy
     if self.rect.y > HEIGHT:
       self.kill()
@@ -340,7 +335,7 @@ while running:
 
         hit_player =  pg.sprite.spritecollide(plr,meteors,True)
         hit_mob = pg.sprite.groupcollide(meteors,bullets,False,True)
-        hit_powerups = pygame.sprite.spritecollide(plr, powerups, True)
+        hit_powerups = pg.sprite.spritecollide(plr, powerups, True)
 
 
         if hit_player:
@@ -356,8 +351,22 @@ while running:
                 mob.lives -= 1
                 mob.explosion_sound = random.choice(mob.explosion_sound_list).play()
                 if mob.lives <= 0:
-                    pass
-                    
+                    pow = Powerup(mob.rect.centerx,mob.rect.centery)
+                    if pow.rndm >= pow.spawn_percent:
+                        pow.spawn = True
+                    if pow.spawn:
+                        powerups.add(pow)
+                        all_sprites.add(pow)
+
+        if hit_powerups:
+            plr.pwup = random.choice(plr.pw)
+
+            if plr.pwup == 1:
+                pass
+            elif plr.pwup == 2:
+                pass
+            elif plr.pwup == 3:
+                pass
 
 
         all_sprites.update()
