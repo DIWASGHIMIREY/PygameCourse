@@ -1,6 +1,6 @@
 import pygame
 import random
-
+pg = pygame
 WIDTH = 800
 HEIGHT = 800
 FPS = 30
@@ -14,9 +14,9 @@ GREEN = (0, 255, 0)
 BLUE = (0, 0, 255)
 YELLOW = (231,200,100)
 IDK = (23,143,251)
-font_name = pygame.font.match_font("arial")
+font_name = pg.font.match_font("arial")
 def draw_text(surf,text,size,x,y,color):
-    font = pygame.font.Font(font_name,size)
+    font = pg.font.Font(font_name,size)
 
     text_surface = font.render(text,True,color)
 
@@ -30,28 +30,28 @@ def newmob():
     meteors.add(r)
 
     all_sprites.add(r)
-class Power(pygame.sprite.Sprite):
+class Power(pg.sprite.Sprite):
     def __init__(self):
-        pygame.sprite.Sprite.__init__(self)
+        pg.sprite.Sprite.__init__(self)
         self.height = 20
         self.width = 20
 
 
-        self.image = pygame.Surface((self.width,self.height))
+        self.image = pg.Surface((self.width,self.height))
         self.image.fill(IDK)
         self.rect = self.image.get_rect()
 
-class Bullet(pygame.sprite.Sprite):
+class Bullet(pg.sprite.Sprite):
     def __init__(self,pos1,pos2):
-        pygame.sprite.Sprite.__init__(self)
+        pg.sprite.Sprite.__init__(self)
         self.height = 20
         self.width = 10
         self.initial_dmg = 1
-        # self.image = pygame.Surface((self.width,self.height))
+        # self.image = pg.Surface((self.width,self.height))
         # self.image.fill(RED)
 
-        self.image = pygame.image.load('All Files/bullet.png')
-        self.image = pygame.transform.scale(self.image, (self.width, self.height))
+        self.image = pg.image.load('All Files/bullet.png')
+        self.image = pg.transform.scale(self.image, (self.width, self.height))
 
         self.rect = self.image.get_rect()
         self.rect.centerx = pos1
@@ -63,15 +63,15 @@ class Bullet(pygame.sprite.Sprite):
         if self.rect.bottom <= 0:
             self.kill()
 
-class StatusBar(pygame.sprite.Sprite):
+class StatusBar(pg.sprite.Sprite):
     def __init__(self, player):
-        pygame.sprite.Sprite.__init__(self)
+        pg.sprite.Sprite.__init__(self)
         self.player = player
 
-        self.health_full = pygame.image.load('Art/GUI/Health_Full.png')
-        self.health_empty = pygame.image.load('Art/GUI/Health_Empty.png')
-        self.mana_full = pygame.image.load('Art/GUI/Mana_Full.png')
-        self.mana_empty = pygame.image.load('Art/GUI/Mana_Empty.png')
+        self.health_full = pg.image.load('Art/GUI/Health_Full.png')
+        self.health_empty = pg.image.load('Art/GUI/Health_Empty.png')
+        self.mana_full = pg.image.load('Art/GUI/Mana_Full.png')
+        self.mana_empty = pg.image.load('Art/GUI/Mana_Empty.png')
 
         self.bar_width = 45
         self.bar_height = 250
@@ -91,8 +91,8 @@ class StatusBar(pygame.sprite.Sprite):
         new_width = int(empty_image.get_width() * scale_factor)
         new_height = int(empty_image.get_height() * scale_factor)
 
-        empty_image = pygame.transform.scale(empty_image, (new_width, new_height))
-        full_image = pygame.transform.scale(full_image, (new_width, new_height))
+        empty_image = pg.transform.scale(empty_image, (new_width, new_height))
+        full_image = pg.transform.scale(full_image, (new_width, new_height))
 
         filled_height = int(new_height * (current / max_value))
         filled_bar = full_image.subsurface((0, new_height - filled_height, new_width, filled_height))
@@ -104,18 +104,17 @@ class StatusBar(pygame.sprite.Sprite):
         self.draw_bar(screen, self.health_full, self.health_empty, self.player.health, MAX_HP, self.health_x, self.y)
         self.draw_bar(screen, self.mana_full, self.mana_empty, self.player.mana, MAX_MANA, self.mana_x, self.y)
 
-class Player(pygame.sprite.Sprite):
-
+class Player(pg.sprite.Sprite):
     def __init__(self):
-        pygame.sprite.Sprite.__init__(self)
+        pg.sprite.Sprite.__init__(self)
         self.height = 40
         self.width = 25
 
-        # self.image = pygame.Surface((self.width,self.height))
+        # self.image = pg.Surface((self.width,self.height))
         # self.image.fill(WHITE)
 
-        self.image = pygame.image.load('All Files/player.png')
-        self.image = pygame.transform.scale(self.image, (self.width,self.height))
+        self.image = pg.image.load('All Files/player.png')
+        self.image = pg.transform.scale(self.image, (self.width,self.height))
         self.rect = self.image.get_rect()
 
 
@@ -124,8 +123,8 @@ class Player(pygame.sprite.Sprite):
         self.speedx = 8
         # self.speedy = 3
 
-        self.last_shot = pygame.time.get_ticks()
-        self.last_reload = pygame.time.get_ticks()
+        self.last_shot = pg.time.get_ticks()
+        self.last_reload = pg.time.get_ticks()
 
         self.shoot_delay = 500
         self.reload_time = 2500
@@ -140,7 +139,7 @@ class Player(pygame.sprite.Sprite):
         self.lives = 5
 
     def shoot(self):
-        self.now = pygame.time.get_ticks()
+        self.now = pg.time.get_ticks()
 
         if self.reloading:
             if self.now - self.last_reload > self.reload_time:
@@ -164,36 +163,36 @@ class Player(pygame.sprite.Sprite):
             shoot_sound.play()
 
     def update(self):
-        k = pygame.key.get_pressed()
-        mp = pygame.mouse.get_pressed()
+        kb = pg.key.get_pressed()
+        m = pg.mouse.get_pressed()
 
-        if k[pygame.K_d]:
+        if kb[pg.K_d]:
             self.rect.x += self.speedx
             if self.rect.right >= WIDTH:
                 self.rect.right = WIDTH
 
-        if k[pygame.K_a]:
+        if kb[pg.K_a]:
             self.rect.x -= self.speedx
             if self.rect.left <= 0:
                 self.rect.left = 0
-        if mp[0]:
+        if m[0]:
             self.shoot()
 
 
-class Meteor(pygame.sprite.Sprite):
+class Meteor(pg.sprite.Sprite):
     def __init__(self):
-        pygame.sprite.Sprite.__init__(self)
+        pg.sprite.Sprite.__init__(self)
         self.height = 30
         self.width = 30
         self.image_list = []
         self.lives = random.randint(1,3)
         self.k = False
 
-        # self.image = pygame.Surface((self.height,self.width))
+        # self.image = pg.Surface((self.height,self.width))
         # self.image.fill(WHITE)
 
         for i in range(1,11):
-            filename = pygame.image.load(f'All Files/Meteor Sprites/meteor{i}.png')
+            filename = pg.image.load(f'All Files/Meteor Sprites/meteor{i}.png')
             self.image_list.append(filename)
         self.image = random.choice(self.image_list)
         self.rect = self.image.get_rect()
@@ -212,21 +211,21 @@ class Meteor(pygame.sprite.Sprite):
         if self.k:
             self.kill()
 
-pygame.init()
-pygame.mixer.init()
+pg.init()
+pg.mixer.init()
 
-screen = pygame.display.set_mode((WIDTH, HEIGHT))
-pygame.display.set_caption("Space Invaders")
+screen = pg.display.set_mode((WIDTH, HEIGHT))
+pg.display.set_caption("Space Invaders")
 
-icon = pygame.image.load("All Files/gameicon.png")
-pygame.display.set_icon(icon)
+icon = pg.image.load("All Files/gameicon.png")
+pg.display.set_icon(icon)
 
-clock = pygame.time.Clock()
+clock = pg.time.Clock()
 
-all_sprites = pygame.sprite.Group()
+all_sprites = pg.sprite.Group()
 
-meteors = pygame.sprite.Group()
-bullets = pygame.sprite.Group()
+meteors = pg.sprite.Group()
+bullets = pg.sprite.Group()
 
 r = Meteor()
 ship = Player()
@@ -236,24 +235,24 @@ all_sprites.add(ship)
 status_bar = StatusBar(ship)
 
 meteor_spawn_delay = 500
-last_meteor_spawn = pygame.time.get_ticks()
+last_meteor_spawn = pg.time.get_ticks()
 
-background = pygame.image.load('All Files/starfield.png')
-background = pygame.transform.scale(background, (WIDTH,HEIGHT))
+background = pg.image.load('All Files/starfield.png')
+background = pg.transform.scale(background, (WIDTH,HEIGHT))
 
 background_rect = background.get_rect()
-pygame.mixer.music.load('All Files/Audio/background_audio.wav')
-pygame.mixer.music.play(-1)
+pg.mixer.music.load('All Files/Audio/background_audio.wav')
+pg.mixer.music.play(-1)
 
-shoot_sound = pygame.mixer.Sound('All Files/Audio/laser_fire.wav')
+shoot_sound = pg.mixer.Sound('All Files/Audio/laser_fire.wav')
 
 explosion_sound_list = []
 for i in range(1, 10):
-    soundfile = pygame.mixer.Sound(f'All Files/Audio/Explosions/boom{i}.wav')
+    soundfile = pg.mixer.Sound(f'All Files/Audio/Explosions/boom{i}.wav')
     explosion_sound_list.append(soundfile)
 
 shoot_sound.set_volume(0.05)
-pygame.mixer.music.set_volume(0.05)
+pg.mixer.music.set_volume(0.05)
 
 for sound in explosion_sound_list:
     sound.set_volume(0.05)
@@ -264,15 +263,15 @@ game_over = False
 
 while running:
     clock.tick(FPS)
-    current_time = pygame.time.get_ticks()
+    current_time = pg.time.get_ticks()
 
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
+    for event in pg.event.get():
+        if event.type == pg.QUIT:
             running = False
 
         if game_over:
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_SPACE:
+            if event.type == pg.KEYDOWN:
+                if event.key == pg.K_SPACE:
                     ship.lives = 5
                     ship.health = MAX_HP
                     ship.score = 0
@@ -282,27 +281,27 @@ while running:
                     bullets.empty()
                     all_sprites.add(ship)
                     game_over = False
-                if event.key == pygame.K_q:
+                if event.key == pg.K_q:
                     running = False
     if game_over:
-        pygame.mixer.music.stop()
+        pg.mixer.music.stop()
         screen.fill(BLACK)
         draw_text(screen, "GAME OVER", 64, WIDTH // 2, HEIGHT // 2.5, RED)
         draw_text(screen, "Press SPACE to Restart", 32, WIDTH // 2, (HEIGHT // 2.5) - 20, RED)
         draw_text(screen, "Press Q to Quit", 32, WIDTH // 2, (HEIGHT // 2.5) + 55, RED)
-        pygame.display.flip()
+        pg.display.flip()
     else:
 
         if current_time - last_meteor_spawn > meteor_spawn_delay:
             newmob()
             last_meteor_spawn = current_time
 
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
+        for event in pg.event.get():
+            if event.type == pg.QUIT:
                 running = False
 
-        hit_player =  pygame.sprite.spritecollide(ship,meteors,True)
-        hit_mob = pygame.sprite.groupcollide(meteors,bullets,False,True)
+        hit_player =  pg.sprite.spritecollide(ship,meteors,True)
+        hit_mob = pg.sprite.groupcollide(meteors,bullets,False,True)
 
 
         if hit_player:
@@ -335,6 +334,6 @@ while running:
         if ship.reloading:
             draw_text(screen, "RELOADING...", 32, WIDTH // 2, HEIGHT - 40, RED)
 
-        pygame.display.flip()
+        pg.display.flip()
 
-pygame.quit()
+pg.quit()
