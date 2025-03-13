@@ -1,12 +1,12 @@
 import pygame
 import random
 
-pg = pygame
+p = pygame
 
 WIDTH = 800
 HEIGHT = 800
 FPS = 30
-MAX_HP = 50
+MAX_HP = 100
 MAX_MANA = 50
 
 WHITE = (255, 255, 255)
@@ -16,9 +16,14 @@ GREEN = (0, 255, 0)
 BLUE = (0, 0, 255)
 YELLOW = (231,200,100)
 IDK = (23,143,251)
-font_name = pg.font.match_font("arial")
+
+running = True
+game_over = False
+
+
+font_name = p.font.match_font("arial")
 def draw_text(surf,text,size,x,y,color):
-    font = pg.font.Font(font_name,size)
+    font = p.font.Font(font_name, size)
 
     text_surface = font.render(text,True,color)
 
@@ -32,6 +37,10 @@ def newmob():
     meteors.add(r)
 
     all_sprites.add(r)
+
+def draw_lives(surf, x, y, lives, icon):
+    for i in range(lives):
+        surf.blit(icon, (x + 35 * i, y))
 
 class Explosion(pygame.sprite.Sprite):
     def __init__(self, center, size):
@@ -75,29 +84,17 @@ class Explosion(pygame.sprite.Sprite):
             self.rect = self.image.get_rect()
             self.rect.center = center
 
-
-class Power(pg.sprite.Sprite):
-    def __init__(self):
-        pg.sprite.Sprite.__init__(self)
-        self.height = 20
-        self.width = 20
-
-
-        self.image = pg.Surface((self.width,self.height))
-        self.image.fill(IDK)
-        self.rect = self.image.get_rect()
-
-class Bullet(pg.sprite.Sprite):
+class Bullet(p.sprite.Sprite):
     def __init__(self,pos1,pos2):
-        pg.sprite.Sprite.__init__(self)
+        p.sprite.Sprite.__init__(self)
         self.height = 20
         self.width = 10
         self.initial_dmg = 1
-        # self.image = pg.Surface((self.width,self.height))
+        # self.image = p.Surface((self.width,self.height))
         # self.image.fill(RED)
 
-        self.image = pg.image.load('All Files/bullet.png')
-        self.image = pg.transform.scale(self.image, (self.width, self.height))
+        self.image = p.image.load('All Files/bullet.png')
+        self.image = p.transform.scale(self.image, (self.width, self.height))
 
         self.rect = self.image.get_rect()
         self.rect.centerx = pos1
@@ -109,15 +106,15 @@ class Bullet(pg.sprite.Sprite):
         if self.rect.bottom <= 0:
             self.kill()
 
-class StatusBar(pg.sprite.Sprite):
+class StatusBar(p.sprite.Sprite):
     def __init__(self, player):
-        pg.sprite.Sprite.__init__(self)
+        p.sprite.Sprite.__init__(self)
         self.player = player
 
-        self.health_full = pg.image.load('All Files/Art/GUI/Health_Full.png')
-        self.health_empty = pg.image.load('All Files/Art/GUI/Health_Empty.png')
-        self.mana_full = pg.image.load('All Files/Art/GUI/Mana_Full.png')
-        self.mana_empty = pg.image.load('All Files/Art/GUI/Mana_Empty.png')
+        self.health_full = p.image.load('All Files/Art/GUI/Health_Full.png')
+        self.health_empty = p.image.load('All Files/Art/GUI/Health_Empty.png')
+        self.mana_full = p.image.load('All Files/Art/GUI/Mana_Full.png')
+        self.mana_empty = p.image.load('All Files/Art/GUI/Mana_Empty.png')
 
         self.bar_width = 250
         self.bar_height = 45
@@ -137,8 +134,8 @@ class StatusBar(pg.sprite.Sprite):
         new_width = int(empty_image.get_width() * scale_factor)
         new_height = int(empty_image.get_height() * scale_factor)
 
-        empty_image = pg.transform.scale(empty_image, (new_width, new_height))
-        full_image = pg.transform.scale(full_image, (new_width, new_height))
+        empty_image = p.transform.scale(empty_image, (new_width, new_height))
+        full_image = p.transform.scale(full_image, (new_width, new_height))
 
         filled_height = int(new_height * (current / max_value))
         filled_bar = full_image.subsurface((0, new_height - filled_height, new_width, filled_height))
@@ -150,18 +147,18 @@ class StatusBar(pg.sprite.Sprite):
         self.draw_bar(screen, self.health_full, self.health_empty, self.player.health, MAX_HP, self.health_x, self.y)
         self.draw_bar(screen, self.mana_full, self.mana_empty, self.player.mana, MAX_MANA, self.mana_x, self.y)
 
-class Player(pg.sprite.Sprite):
+class Player(p.sprite.Sprite):
     def __init__(self):
-        pg.sprite.Sprite.__init__(self)
+        p.sprite.Sprite.__init__(self)
         self.height = 40
         self.width = 25
-        self.pw = [1,2,3]
+        self.pw = [1,2,3,4]
 
-        # self.image = pg.Surface((self.width,self.height))
+        # self.image = p.Surface((self.width,self.height))
         # self.image.fill(WHITE)
 
-        self.image = pg.image.load('All Files/player.png')
-        self.image = pg.transform.scale(self.image, (self.width,self.height))
+        self.image = p.image.load('All Files/player.png')
+        self.image = p.transform.scale(self.image, (self.width, self.height))
         self.rect = self.image.get_rect()
 
 
@@ -170,8 +167,8 @@ class Player(pg.sprite.Sprite):
         self.speedx = 8
         # self.speedy = 3
 
-        self.last_shot = pg.time.get_ticks()
-        self.last_reload = pg.time.get_ticks()
+        self.last_shot = p.time.get_ticks()
+        self.last_reload = p.time.get_ticks()
 
         self.shoot_delay = 500
         self.reload_time = 2500
@@ -179,14 +176,21 @@ class Player(pg.sprite.Sprite):
         self.reloading = False
 
         self.score = 0
-        self.ammo = 40
-        self.max_ammo = 40
+        self.ammo = 100
+        self.max_ammo = 100
         self.health = MAX_HP
         self.mana = MAX_MANA
-        self.lives = 5
+        self.lives = 3
+        self.lvl = 0
+
+        self.total_score = 0
+
+        self.lvlup_threshold = 20
+        self.bullet_dmg = 1
+        self.dual_shot = False
 
     def shoot(self):
-        self.now = pg.time.get_ticks()
+        self.now = p.time.get_ticks()
 
         if self.reloading:
             if self.now - self.last_reload > self.reload_time:
@@ -201,24 +205,32 @@ class Player(pg.sprite.Sprite):
 
         if self.now - self.last_shot > self.shoot_delay:
             self.last_shot = self.now
+            if self.dual_shot:
+                b1 = Bullet(self.rect.centerx - 10, self.rect.top)
+                b2 = Bullet(self.rect.centerx + 10, self.rect.top)
+                all_sprites.add(b1, b2)
+                bullets.add(b1, b2)
 
-            bullet = Bullet(self.rect.centerx,self.rect.top)
-            all_sprites.add(bullet)
+                self.ammo -= 2
+                shoot_sound.play()
+            else:
+                bullet = Bullet(self.rect.centerx,self.rect.top)
+                all_sprites.add(bullet)
 
-            bullets.add(bullet)
-            self.ammo -= 1
-            shoot_sound.play()
+                bullets.add(bullet)
+                self.ammo -= 1
+                shoot_sound.play()
 
     def update(self):
-        k = pg.key.get_pressed()
-        mp = pg.mouse.get_pressed()
+        k = p.key.get_pressed()
+        mp = p.mouse.get_pressed()
 
-        if k[pg.K_d]:
+        if k[p.K_d]:
             self.rect.x += self.speedx
             if self.rect.right >= WIDTH:
                 self.rect.right = WIDTH
 
-        if k[pg.K_a]:
+        if k[p.K_a]:
             self.rect.x -= self.speedx
             if self.rect.left <= 0:
                 self.rect.left = 0
@@ -226,28 +238,27 @@ class Player(pg.sprite.Sprite):
             self.shoot()
 
 
-class Meteor(pg.sprite.Sprite):
+class Meteor(p.sprite.Sprite):
     def __init__(self):
-        pg.sprite.Sprite.__init__(self)
+        p.sprite.Sprite.__init__(self)
         self.height = 30
         self.width = 30
         self.image_list = []
-        self.lives = random.randint(1,3)
-        self.k = False
+        self.lives = random.randint(1,2)
 
         self.explosion_sound_list = []
         for i in range(1, 10):
-            self.sound_file = pg.mixer.Sound(f'All Files/Audio/Explosions/boom{i}.wav')
+            self.sound_file = p.mixer.Sound(f'All Files/Audio/Explosions/boom{i}.wav')
             self.explosion_sound_list.append(self.sound_file)
 
         for sound in self.explosion_sound_list:
             sound.set_volume(0.05)
 
-        # self.image = pg.Surface((self.height,self.width))
+        # self.image = p.Surface((self.height,self.width))
         # self.image.fill(WHITE)
 
         for i in range(1,11):
-            filename = pg.image.load(f'All Files/Meteor Sprites/meteor{i}.png')
+            filename = p.image.load(f'All Files/Meteor Sprites/meteor{i}.png')
             self.image_list.append(filename)
         self.image = random.choice(self.image_list)
         self.rect = self.image.get_rect()
@@ -261,25 +272,22 @@ class Meteor(pg.sprite.Sprite):
         if self.rect.top >= HEIGHT:
             self.kill()
         if self.lives <= 0:
-            plr.score += 5
-            self.k = True
-        if self.k:
+            plr.score += 1
+            plr.total_score += 1
             self.kill()
 
-class Powerup(pg.sprite.Sprite):
+class Powerup(p.sprite.Sprite):
   def __init__(self,x,y):
-    pg.sprite.Sprite.__init__(self)
+    p.sprite.Sprite.__init__(self)
     self.width = 20
     self.height = 20
-    self.image= pg.Surface((self.width,self.height))
+    self.image= p.Surface((self.width, self.height))
     self.image.fill(WHITE)
 
-    self.spawn_percent = 0.9
+    self.spawn_percent = 0.5
     self.spawn = False
 
-    self.rndm = random.randrange(0,1)
-
-
+    self.rndm = random.random()
 
     self.rect = self.image.get_rect(center=(x,y))
     self.speedx=random.randrange(3,8)
@@ -290,24 +298,99 @@ class Powerup(pg.sprite.Sprite):
     if self.rect.y > HEIGHT:
       self.kill()
 
-pg.init()
-pg.mixer.init()
+def start_screen():
+    screen.fill(BLACK)
+    draw_text(screen, "WELCOME", 64, WIDTH // 2, HEIGHT // 2.5, RED)
+    draw_text(screen, "Press SPACE to Start", 32, WIDTH // 2, (HEIGHT // 2.5) - 20, RED)
+    draw_text(screen, "Press Q to Quit", 32, WIDTH // 2, (HEIGHT // 2.5) + 55, RED)
+    p.display.flip()
+    waiting = True
+    while waiting:
+        clock.tick(FPS)
+        for event in p.event.get():
+            k = p.key.get_pressed()
+            if event.type == p.QUIT:
+                p.quit()
+            if event.type == p.KEYDOWN:
+                if k[p.K_SPACE]:
+                    waiting = False
+                if k[p.K_q]:
+                    p.quit()
 
-screen = pg.display.set_mode((WIDTH, HEIGHT))
-pg.display.set_caption("Space Invaders")
+def level_up():
+    plr.score = 0
+    screen.fill(BLACK)
+    draw_text(screen, "Level up!", 64, WIDTH // 2, (HEIGHT // 2.5) - 20, RED)
+    draw_text(screen, f"Level {plr.lvl}", 32, WIDTH // 2, (HEIGHT // 2.5) + 55, RED)
+    p.display.flip()
+    waiting = True
 
-icon = pg.image.load("All Files/gameicon.png")
-pg.display.set_icon(icon)
+    last = p.time.get_ticks()
+    delay = 1500
+    while waiting:
+        clock.tick(FPS)
+        now = p.time.get_ticks()
+        all_sprites.empty()
+        meteors.empty()
+        bullets.empty()
+        for event in p.event.get():
+            if event.type == p.QUIT:
+                p.quit()
+        if now - last > delay:
+            waiting = False
+            all_sprites.add(plr)
+            last = now
 
-clock = pg.time.Clock()
+def boss_lvl():
+    screen.fill(BLACK)
+    if plr.lvl == 5:
+        draw_text(screen, "Boss Level 1", 64, WIDTH // 2, (HEIGHT // 2.5) - 20, RED)
+    elif plr.lvl == 10:
+        draw_text(screen, "Boss Level 2", 64, WIDTH // 2, (HEIGHT // 2.5) - 20, RED)
+    draw_text(screen, f"Level {plr.lvl}", 32, WIDTH // 2, (HEIGHT // 2.5) + 55, RED)
+    draw_text(screen, f"Press C to Continue", 32, WIDTH // 2, (HEIGHT // 2.5) + 85, RED)
+    draw_text(screen, f"Press V to Skip", 32, WIDTH // 2, (HEIGHT // 2.5) + 110, RED)
+    p.display.flip()
 
-all_sprites = pg.sprite.Group()
+    waiting = True
+    while waiting:
+        clock.tick(FPS)
+        all_sprites.empty()
+        meteors.empty()
+        bullets.empty()
 
-meteors = pg.sprite.Group()
-powerups = pg.sprite.Group()
-bullets = pg.sprite.Group()
+        for event in p.event.get():
+            k = pygame.key.get_pressed()
+            if event.type == p.QUIT:
+                p.quit()
 
-r = Meteor()
+            if k[p.K_c]:
+                waiting = False
+                all_sprites.add(plr)
+            elif k[p.K_v]:
+                waiting = False
+                if plr.lvl != 11:
+                    level_up()
+
+p.init()
+p.mixer.init()
+
+screen = p.display.set_mode((WIDTH, HEIGHT))
+p.display.set_caption("Space Invaders")
+
+icon = p.image.load("All Files/gameicon.png")
+p.display.set_icon(icon)
+
+clock = p.time.Clock()
+
+start_screen()
+
+all_sprites = p.sprite.Group()
+
+meteors = p.sprite.Group()
+powerups = p.sprite.Group()
+bullets = p.sprite.Group()
+
 plr = Player()
 
 all_sprites.add(plr)
@@ -315,40 +398,42 @@ all_sprites.add(plr)
 status_bar = StatusBar(plr)
 
 meteor_spawn_delay = 500
-last_meteor_spawn = pg.time.get_ticks()
+last_meteor_spawn = p.time.get_ticks()
 
-background = pg.image.load('All Files/starfield.png')
-background = pg.transform.scale(background, (WIDTH,HEIGHT))
+background = p.image.load('All Files/starfield.png')
+background = p.transform.scale(background, (WIDTH, HEIGHT))
 
 background_rect = background.get_rect()
-pg.mixer.music.load('All Files/Audio/background_audio.wav')
-pg.mixer.music.play(-1)
+p.mixer.music.load('All Files/Audio/background_audio.wav')
+p.mixer.music.play(-1)
 
-shoot_sound = pg.mixer.Sound('All Files/Audio/laser_fire.wav')
+shoot_sound = p.mixer.Sound('All Files/Audio/laser_fire.wav')
 
-
+life_icon = p.image.load('All Files/player.png')
+life_icon = p.transform.scale(life_icon, (30, 30))
 
 shoot_sound.set_volume(0.05)
-pg.mixer.music.set_volume(0.05)
+p.mixer.music.set_volume(0.05)
 
 
 
 
-running = True
-game_over = False
+
 
 while running:
     clock.tick(FPS)
-    current_time = pg.time.get_ticks()
+    current_time = p.time.get_ticks()
 
-    for event in pg.event.get():
-        if event.type == pg.QUIT:
+    for event in p.event.get():
+        if event.type == p.QUIT:
             running = False
-        if event.type == pg.KEYDOWN and event.key == pg.K_F11:
-            pg.display.toggle_fullscreen()
+
+
+        if event.type == p.KEYDOWN and event.key == p.K_F11:
+            p.display.toggle_fullscreen()
         if game_over:
-            if event.type == pg.KEYDOWN:
-                if event.key == pg.K_SPACE:
+            if event.type == p.KEYDOWN:
+                if event.key == p.K_SPACE:
                     plr.lives = 5
                     plr.health = MAX_HP
                     plr.score = 0
@@ -358,28 +443,37 @@ while running:
                     bullets.empty()
                     all_sprites.add(plr)
                     game_over = False
-                if event.key == pg.K_q:
+                if event.key == p.K_q:
                     running = False
+
+
     if game_over:
-        pg.mixer.music.stop()
+        p.mixer.music.stop()
         screen.fill(BLACK)
         draw_text(screen, "GAME OVER", 64, WIDTH // 2, HEIGHT // 2.5, RED)
         draw_text(screen, "Press SPACE to Restart", 32, WIDTH // 2, (HEIGHT // 2.5) - 20, RED)
         draw_text(screen, "Press Q to Quit", 32, WIDTH // 2, (HEIGHT // 2.5) + 55, RED)
-        pg.display.flip()
-    else:
+        p.display.flip()
 
+    else:
         if current_time - last_meteor_spawn > meteor_spawn_delay:
             newmob()
             last_meteor_spawn = current_time
 
-        for event in pg.event.get():
-            if event.type == pg.QUIT:
+        for event in p.event.get():
+            if event.type == p.QUIT:
                 running = False
+            if event.type == p.USEREVENT + 1:
+                plr.dual_shot = False
+                plr.bullet_dmg = 1
 
-        hit_player =  pg.sprite.spritecollide(plr,meteors,True)
-        hit_mob = pg.sprite.groupcollide(meteors,bullets,False,True)
-        hit_powerups = pg.sprite.spritecollide(plr, powerups, True)
+            if event.type == p.USEREVENT:
+                plr.shoot_delay = 500
+
+
+        hit_player =  p.sprite.spritecollide(plr, meteors, True)
+        hit_mob = p.sprite.groupcollide(meteors, bullets, False, True)
+        hit_powerups = p.sprite.spritecollide(plr, powerups, True)
 
 
         if hit_player:
@@ -394,28 +488,49 @@ while running:
 
         if hit_mob:
             for mob in hit_mob:
-                mob.lives -= 1
+                mob.lives -= plr.bullet_dmg
 
                 mob.explosion_sound = random.choice(mob.explosion_sound_list).play()
                 if mob.lives <= 0:
                     expl = Explosion(mob.rect.center, 'lg')
                     all_sprites.add(expl)
                     pow = Powerup(mob.rect.centerx,mob.rect.centery)
-                    if pow.rndm >= pow.spawn_percent:
+                    if pow.rndm <= pow.spawn_percent:
                         pow.spawn = True
                     if pow.spawn:
                         powerups.add(pow)
                         all_sprites.add(pow)
+                        pow.spawn = False
 
         if hit_powerups:
-            plr.pwup = random.choice(plr.pw)
+            for power in hit_powerups:
+                plr.pwup = random.choice(plr.pw)
 
-            if plr.pwup == 1:
-                pass
-            elif plr.pwup == 2:
-                pass
-            elif plr.pwup == 3:
-                pass
+                if plr.pwup == 1:
+                    plr.ammo = plr.max_ammo
+                elif plr.pwup == 2:
+                    plr.dual_shot = True
+                    plr.bullet_dmg = 2
+                    p.time.set_timer(p.USEREVENT + 1, 5000)
+                elif plr.pwup == 3:
+                    plr.shoot_delay = 250
+                    p.time.set_timer(p.USEREVENT, 3000)
+                elif plr.pwup == 4:
+                    plr.health += 10
+                    if plr.health >= MAX_HP:
+                        plr.health = MAX_HP
+
+
+
+        if plr.score >= plr.lvlup_threshold:
+            plr.score = 0
+            plr.lvl += 1
+            if plr.lvl <= 4 or plr.lvl >= 6 and plr.lvl != 10 and plr.lvl != 11:
+                level_up()
+            elif plr.lvl == 5 or plr.lvl == 10:
+                boss_lvl()
+            elif plr.lvl >= 11:
+                game_over = True
 
 
         all_sprites.update()
@@ -427,12 +542,12 @@ while running:
 
         draw_text(screen, f"Score: {plr.score}", 32, (WIDTH // 4) - 100, 10, YELLOW)
 
-        draw_text(screen, f"Lives: {plr.lives}", 32, WIDTH - 100, 10, WHITE)
-        draw_text(screen, f"{plr.ammo}/40", 32, 50, HEIGHT - 50, WHITE)
+        draw_lives(screen, WIDTH - 150, 10, plr.lives, life_icon)
+        draw_text(screen, f"{plr.ammo}/{plr.max_ammo}", 32, 60, HEIGHT - 50, IDK)
 
         if plr.reloading:
             draw_text(screen, "RELOADING...", 32, WIDTH // 2, HEIGHT - 40, RED)
 
-        pg.display.flip()
+        p.display.flip()
 
-pg.quit()
+p.quit()
