@@ -1,8 +1,6 @@
 import pygame
 import random
 
-from pygame.transform import scale
-
 p = pygame
 
 WIDTH = 800
@@ -16,7 +14,9 @@ BLACK = (0, 0, 0)
 RED = (255, 0, 0)
 GREEN = (0, 255, 0)
 BLUE = (0, 0, 255)
+LIGHT_BLUE = (52, 183, 235)
 YELLOW = (231,200,100)
+PURPLE = (113, 52, 235)
 IDK = (23,143,251)
 
 running = True
@@ -87,7 +87,7 @@ class Explosion(p.sprite.Sprite):
             self.rect.center = center
 
 class Bullet(p.sprite.Sprite):
-    def __init__(self,pos1,pos2):
+    def __init__(self,pos1,pos2,speedx):
         p.sprite.Sprite.__init__(self)
         self.height = 20
         self.width = 10
@@ -102,9 +102,10 @@ class Bullet(p.sprite.Sprite):
         self.rect.centerx = pos1
         self.rect.bottom = pos2
         self.speedy = 3
-
+        self.speedx = speedx
     def update(self):
         self.rect.y -= self.speedy
+        self.rect.x += self.speedx
         if self.rect.bottom <= 0:
             self.kill()
 
@@ -122,7 +123,8 @@ class StatusBar(p.sprite.Sprite):
         self.bar_height = 45
 
         self.margin = 5
-        self.spacing = (WIDTH//4) + 265
+        self.spacing = (WIDTH//2) + 105
+
 
         self.health_x = (WIDTH + 207) - self.margin - self.bar_width
         self.mana_x = self.health_x - self.bar_width - self.spacing
@@ -173,73 +175,77 @@ class Player(p.sprite.Sprite):
         self.last_reload = p.time.get_ticks()
         self.last_refill = p.time.get_ticks()
 
-        self.shoot_delay = 500
+        self.shoot_delay = 300
         self.reload_time = 2500
-        self.refill_delay = 300
+        self.refill_delay = 350
 
         self.reloading = False
+        self.counter = 0
 
+        # Player data
         self.score = 0
         self.ammo = 100
         self.max_ammo = 100
         self.health = MAX_HP
         self.mana = MAX_MANA
         self.lives = 3
-        self.lvl = 1
 
         self.total_score = 0
 
-        self.lvlup_threshold = 25
+        # Level data
+        self.lvlup_threshold = 30
+        self.lvl = 1
+
+        # Powerups
         self.bullet_dmg = 1
+        self.speedup = False
         self.dual_shot = False
         self.refilling = False
 
     def shoot(self):
-        self.now = p.time.get_ticks()
-
-        if self.reloading:
-            if self.now - self.last_reload > self.reload_time:
-                self.ammo = self.max_ammo
-                self.reloading = False
-            return
-
         if self.ammo <= 0:
             self.ammo = 0
             self.reloading = True
-            self.last_reload = self.now
+            return
 
         if self.now - self.last_shot > self.shoot_delay:
             self.last_shot = self.now
             if self.dual_shot:
-                b1 = Bullet(self.rect.centerx - 10, self.rect.top)
-                b2 = Bullet(self.rect.centerx + 10, self.rect.top)
+                b1 = Bullet(self.rect.centerx - 10, self.rect.top, -1)
+                b2 = Bullet(self.rect.centerx + 10, self.rect.top, 1)
+                b1.image = p.image.load("All Files/Powerups/bullet_dual.png")
+                b2.image = p.image.load("All Files/Powerups/bullet_dual.png")
                 all_sprites.add(b1, b2)
                 bullets.add(b1, b2)
-                self.mana -= 10
+                self.mana -= 5
                 if self.mana <= 0:
                     self.dual_shot = False
                     self.refilling = True
                     self.mana = 0
+
                 self.ammo -= 2
                 shoot_sound.play()
 
             else:
-                bullet = Bullet(self.rect.centerx,self.rect.top)
+                bullet = Bullet(self.rect.centerx,self.rect.top, 0)
                 all_sprites.add(bullet)
                 bullets.add(bullet)
+                if self.speedup:
+                    bullet.image = p.image.load("All Files/Powerups/bullet_speed.png")
                 self.ammo -= 1
                 shoot_sound.play()
-
-        if self.refilling:
-            if self.now - self.last_refill > self.refill_delay:
-                self.last_refill = self.now
-                self.mana += 5
-                if self.mana >= MAX_MANA:
-                    self.mana = MAX_MANA
-                    self.refilling = False
-
+            if self.speedup:
+                self.shoot_delay = 150
+                self.mana -= 2
+                if self.mana <= 0:
+                    self.mana = 0
+                    self.speedup = False
+                    self.refilling = True
+            else:
+                self.shoot_delay = 300
 
     def update(self):
+        self.now = p.time.get_ticks()
         k = p.key.get_pressed()
         mp = p.mouse.get_pressed()
 
@@ -254,6 +260,21 @@ class Player(p.sprite.Sprite):
                 self.rect.left = 0
         if mp[0]:
             self.shoot()
+
+        if self.refilling:
+            if self.now - self.last_refill > self.refill_delay:
+                self.last_refill = self.now
+                self.mana += 5
+                if self.mana >= MAX_MANA:
+                    self.mana = MAX_MANA
+                    self.refilling = False
+
+        if self.reloading:
+            if self.now - self.last_reload > self.reload_time:
+                self.ammo = self.max_ammo
+                self.last_reload = self.now
+                self.reloading = False
+
 
 
 class Mob(p.sprite.Sprite):
@@ -333,9 +354,9 @@ class Power(p.sprite.Sprite):
 
 def start_screen():
     screen.fill(BLACK)
-    draw_text(screen, "WELCOME", 64, WIDTH // 2, HEIGHT // 2.5, RED)
-    draw_text(screen, "Press SPACE to Start", 32, WIDTH // 2, (HEIGHT // 2.5) - 25, RED)
-    draw_text(screen, "Press Q to Quit", 32, WIDTH // 2, (HEIGHT // 2.5) + 60, RED)
+    draw_text(screen, "WELCOME", 64, WIDTH // 2, HEIGHT // 2.5, PURPLE)
+    draw_text(screen, "Press SPACE to Start", 32, WIDTH // 2, (HEIGHT // 2.5) - 25, PURPLE)
+    draw_text(screen, "Press Q to Quit", 32, WIDTH // 2, (HEIGHT // 2.5) + 60, PURPLE)
     p.display.flip()
     waiting = True
     while waiting:
@@ -353,8 +374,8 @@ def start_screen():
 def level_up():
     plr.score = 0
     screen.fill(BLACK)
-    draw_text(screen, "Level up!", 64, WIDTH // 2, (HEIGHT // 2.5) - 20, RED)
-    draw_text(screen, f"Level {plr.lvl}", 32, WIDTH // 2, (HEIGHT // 2.5) + 55, RED)
+    draw_text(screen, "Level up!", 64, WIDTH // 2, (HEIGHT // 2.5) - 20, LIGHT_BLUE)
+    draw_text(screen, f"Level {plr.lvl}", 32, WIDTH // 2, (HEIGHT // 2.5) + 55, LIGHT_BLUE)
     p.display.flip()
     waiting = True
 
@@ -430,7 +451,7 @@ all_sprites.add(plr)
 
 status_bar = StatusBar(plr)
 
-meteor_spawn_delay = 500
+meteor_spawn_delay = 600
 last_meteor_spawn = p.time.get_ticks()
 
 background = p.image.load('All Files/background.png')
@@ -451,7 +472,6 @@ p.mixer.music.set_volume(0.05)
 while running:
     clock.tick(FPS)
     current_time = p.time.get_ticks()
-
     for event in p.event.get():
         if event.type == p.QUIT:
             running = False
@@ -465,6 +485,7 @@ while running:
                     plr.lives = 5
                     plr.health = MAX_HP
                     plr.score = 0
+                    plr.counter = 0
                     plr.ammo = plr.max_ammo
                     all_sprites.empty()
                     meteors.empty()
@@ -479,8 +500,9 @@ while running:
         p.mixer.music.stop()
         screen.fill(BLACK)
         draw_text(screen, "GAME OVER", 64, WIDTH // 2, HEIGHT // 2.5, RED)
-        draw_text(screen, "Press SPACE to Restart", 32, WIDTH // 2, (HEIGHT // 2.5) - 20, RED)
-        draw_text(screen, "Press Q to Quit", 32, WIDTH // 2, (HEIGHT // 2.5) + 55, RED)
+        draw_text(screen, "Press SPACE to Restart", 32, WIDTH // 2, (HEIGHT // 2.5) - 25, PURPLE)
+        draw_text(screen, "Press Q to Quit", 32, WIDTH // 2, (HEIGHT // 2.5) + 60, PURPLE)
+        draw_text(screen, f"You killed {plr.total_score} mobs!", 32, WIDTH // 2, (HEIGHT // 2.5) + 100, YELLOW)
         p.display.flip()
 
     else:
@@ -491,9 +513,6 @@ while running:
         for event in p.event.get():
             if event.type == p.QUIT:
                 running = False
-
-            if event.type == p.USEREVENT:
-                plr.shoot_delay = 500
 
 
         hit_player =  p.sprite.spritecollide(plr, meteors, True)
@@ -520,7 +539,7 @@ while running:
                     expl = Explosion(mob.rect.center, 'lg')
                     all_sprites.add(expl)
                     pow = Power(mob.rect.centerx, mob.rect.centery)
-                    if plr.lvl >= 3:
+                    if plr.lvl >= 2:
                         if pow.ran <= pow.spawn_percent:
                             pow.spawn = True
                         if pow.spawn:
@@ -538,8 +557,7 @@ while running:
                     plr.dual_shot = True
                     plr.bullet_dmg = 2
                 elif plr.pwup == 3:
-                    plr.shoot_delay = 250
-                    p.time.set_timer(p.USEREVENT, 2000)
+                    plr.speedup = True
                 elif plr.pwup == 4:
                     plr.health += 10
                     if plr.health >= MAX_HP:
@@ -550,12 +568,22 @@ while running:
         if plr.score >= plr.lvlup_threshold:
             plr.score = 0
             plr.lvl += 1
+            plr.counter += 1
+            print(f"Count: {plr.counter}")
             if plr.lvl <= 4 or plr.lvl >= 6 and plr.lvl != 10 and plr.lvl != 11:
                 level_up()
+
             elif plr.lvl == 5 or plr.lvl == 10:
                 boss_lvl()
             elif plr.lvl >= 11:
                 game_over = True
+
+        if plr.counter == 2:
+            pow.spawn_percent += 0.2
+            print(f"Powerup percentage: {pow.spawn_percent}")
+            plr.counter = 0
+            meteor_spawn_delay -= 100
+            print(f"Delay: {meteor_spawn_delay}")
 
 
         all_sprites.update()
@@ -565,9 +593,9 @@ while running:
 
         status_bar.update(screen)
 
-        draw_text(screen, f"Score: {plr.score}", 32, (WIDTH // 4) - 75, 10, YELLOW)
+        draw_text(screen, f"{plr.score}/{plr.lvlup_threshold}", 32, (WIDTH // 4) - 115, 10, YELLOW)
 
-        draw_lives(screen, WIDTH - 150, 10, plr.lives, life_icon)
+        draw_lives(screen, WIDTH//2.25, 10, plr.lives, life_icon)
         draw_text(screen, f"{plr.ammo}/{plr.max_ammo}", 32, 60, HEIGHT - 50, IDK)
 
         if plr.reloading:
