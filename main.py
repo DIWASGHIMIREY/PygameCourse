@@ -175,7 +175,7 @@ class Player(p.sprite.Sprite):
         self.last_reload = p.time.get_ticks()
         self.last_refill = p.time.get_ticks()
 
-        self.shoot_delay = 300
+        self.shoot_delay = 350
         self.reload_time = 2500
         self.refill_delay = 350
 
@@ -205,6 +205,7 @@ class Player(p.sprite.Sprite):
     def shoot(self):
         if self.ammo <= 0:
             self.ammo = 0
+            self.last_reload = self.now
             self.reloading = True
             return
 
@@ -242,7 +243,7 @@ class Player(p.sprite.Sprite):
                     self.speedup = False
                     self.refilling = True
             else:
-                self.shoot_delay = 300
+                self.shoot_delay = 350
 
     def update(self):
         self.now = p.time.get_ticks()
@@ -283,7 +284,7 @@ class Mob(p.sprite.Sprite):
         self.height = 70
         self.width = 65
         # self.image_list = []
-        self.lives = random.randint(1,2)
+        self.lives = random.randint(1,3)
 
         self.explosion_sound_list = []
         for i in range(1, 10):
