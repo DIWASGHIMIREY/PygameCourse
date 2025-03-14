@@ -1,13 +1,15 @@
 import pygame
 import random
 
+from pygame.transform import scale
+
 p = pygame
 
 WIDTH = 800
 HEIGHT = 800
 FPS = 30
 MAX_HP = 100
-MAX_MANA = 50
+MAX_MANA = 100
 
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
@@ -33,7 +35,7 @@ def draw_text(surf,text,size,x,y,color):
     surf.blit(text_surface,text_rect)
 
 def newmob():
-    r = Meteor()
+    r = Mob()
     meteors.add(r)
 
     all_sprites.add(r)
@@ -42,9 +44,9 @@ def draw_lives(surf, x, y, lives, icon):
     for i in range(lives):
         surf.blit(icon, (x + 35 * i, y))
 
-class Explosion(pygame.sprite.Sprite):
+class Explosion(p.sprite.Sprite):
     def __init__(self, center, size):
-        pygame.sprite.Sprite.__init__(self)
+        p.sprite.Sprite.__init__(self)
         self.width = 40
         self.height = 40
         self.size = size
@@ -53,26 +55,26 @@ class Explosion(pygame.sprite.Sprite):
         self.expl_anim['sm'] = []
         self.expl_anim['lg'] = []
         self.load_image()
-        self.image = pygame.Surface((self.width, self.height))
+        self.image = p.Surface((self.width, self.height))
 
         self.rect = self.image.get_rect()
         self.rect.center = center
 
         self.frame_rate = 75
         self.frame = 0
-        self.last_update = pygame.time.get_ticks()
+        self.last_update = p.time.get_ticks()
 
     def load_image(self):
         for i in range(1, 9):
             filename = f'All Files/Explosions/explosion{i}.png'
-            img = pygame.image.load(filename)
-            img_sm = pygame.transform.scale(img, (32, 32))
+            img = p.image.load(filename)
+            img_sm = p.transform.scale(img, (32, 32))
             self.expl_anim['sm'].append(img_sm)
-            img_sm = pygame.transform.scale(img, (150, 150))
+            img_sm = p.transform.scale(img, (150, 150))
             self.expl_anim['lg'].append(img_sm)
 
     def update(self):
-        now = pygame.time.get_ticks()
+        now = p.time.get_ticks()
         if now - self.last_update > self.frame_rate:
             self.last_update = now
             self.frame += 1
@@ -120,7 +122,7 @@ class StatusBar(p.sprite.Sprite):
         self.bar_height = 45
 
         self.margin = 5
-        self.spacing = (WIDTH//4) + 305
+        self.spacing = (WIDTH//4) + 265
 
         self.health_x = (WIDTH + 207) - self.margin - self.bar_width
         self.mana_x = self.health_x - self.bar_width - self.spacing
@@ -150,8 +152,8 @@ class StatusBar(p.sprite.Sprite):
 class Player(p.sprite.Sprite):
     def __init__(self):
         p.sprite.Sprite.__init__(self)
-        self.height = 40
-        self.width = 25
+        self.height = 50
+        self.width = 45
         self.pw = [1,2,3,4]
 
         # self.image = p.Surface((self.width,self.height))
@@ -169,9 +171,11 @@ class Player(p.sprite.Sprite):
 
         self.last_shot = p.time.get_ticks()
         self.last_reload = p.time.get_ticks()
+        self.last_refill = p.time.get_ticks()
 
         self.shoot_delay = 500
         self.reload_time = 2500
+        self.refill_delay = 300
 
         self.reloading = False
 
@@ -181,13 +185,14 @@ class Player(p.sprite.Sprite):
         self.health = MAX_HP
         self.mana = MAX_MANA
         self.lives = 3
-        self.lvl = 0
+        self.lvl = 1
 
         self.total_score = 0
 
-        self.lvlup_threshold = 20
+        self.lvlup_threshold = 25
         self.bullet_dmg = 1
         self.dual_shot = False
+        self.refilling = False
 
     def shoot(self):
         self.now = p.time.get_ticks()
@@ -210,16 +215,29 @@ class Player(p.sprite.Sprite):
                 b2 = Bullet(self.rect.centerx + 10, self.rect.top)
                 all_sprites.add(b1, b2)
                 bullets.add(b1, b2)
-
+                self.mana -= 10
+                if self.mana <= 0:
+                    self.dual_shot = False
+                    self.refilling = True
+                    self.mana = 0
                 self.ammo -= 2
                 shoot_sound.play()
+
             else:
                 bullet = Bullet(self.rect.centerx,self.rect.top)
                 all_sprites.add(bullet)
-
                 bullets.add(bullet)
                 self.ammo -= 1
                 shoot_sound.play()
+
+        if self.refilling:
+            if self.now - self.last_refill > self.refill_delay:
+                self.last_refill = self.now
+                self.mana += 5
+                if self.mana >= MAX_MANA:
+                    self.mana = MAX_MANA
+                    self.refilling = False
+
 
     def update(self):
         k = p.key.get_pressed()
@@ -238,12 +256,12 @@ class Player(p.sprite.Sprite):
             self.shoot()
 
 
-class Meteor(p.sprite.Sprite):
+class Mob(p.sprite.Sprite):
     def __init__(self):
         p.sprite.Sprite.__init__(self)
-        self.height = 30
-        self.width = 30
-        self.image_list = []
+        self.height = 70
+        self.width = 65
+        # self.image_list = []
         self.lives = random.randint(1,2)
 
         self.explosion_sound_list = []
@@ -254,13 +272,13 @@ class Meteor(p.sprite.Sprite):
         for sound in self.explosion_sound_list:
             sound.set_volume(0.05)
 
-        # self.image = p.Surface((self.height,self.width))
-        # self.image.fill(WHITE)
+        self.image = p.image.load("All Files/enemy.png")
+        self.image = p.transform.scale(self.image, (self.width,self.height))
 
-        for i in range(1,11):
-            filename = p.image.load(f'All Files/Meteor Sprites/meteor{i}.png')
-            self.image_list.append(filename)
-        self.image = random.choice(self.image_list)
+        # for i in range(1,11):
+        #     filename = p.image.load(f'All Files/Mob Sprites/meteor{i}.png')
+        #     self.image_list.append(filename)
+        # self.image = random.choice(self.image_list)
         self.rect = self.image.get_rect()
 
         self.rect.x = random.randint(0, WIDTH - self.width)
@@ -276,33 +294,48 @@ class Meteor(p.sprite.Sprite):
             plr.total_score += 1
             self.kill()
 
-class Powerup(p.sprite.Sprite):
-  def __init__(self,x,y):
-    p.sprite.Sprite.__init__(self)
-    self.width = 20
-    self.height = 20
-    self.image= p.Surface((self.width, self.height))
-    self.image.fill(WHITE)
+class Power(p.sprite.Sprite):
+    def __init__(self,x,y):
+        p.sprite.Sprite.__init__(self)
+        self.width = 30
+        self.height = 30
 
-    self.spawn_percent = 0.5
-    self.spawn = False
+        self.powerup_images = {
+            1: "All Files/Powerups/reloading.png",
+            2: "All Files/Powerups/double_shot.png",
+            3: "All Files/Powerups/speedup.png",
+            4: "All Files/Powerups/health_up.png",
+        }
+        self.type = random.choice([1, 2, 3, 4])
+        self.load_image()
 
-    self.rndm = random.random()
+        self.rect = self.image.get_rect()
 
-    self.rect = self.image.get_rect(center=(x,y))
-    self.speedx=random.randrange(3,8)
-    self.speedy=2
+        self.rect.center = (x,y)
+        # self.image.fill(WHITE)
 
-  def update(self):
-    self.rect.y += self.speedy
-    if self.rect.y > HEIGHT:
-      self.kill()
+        self.spawn_percent = 0.1
+        self.spawn = False
+
+        self.ran = random.random()
+
+        self.speedx = random.randrange(3,8)
+        self.speedy = 2
+    def load_image(self):
+        image_path = self.powerup_images.get(self.type, "All Files/Powerups/speedup.png")
+        self.image = p.image.load(image_path)
+        self.image = p.transform.scale(self.image, (self.width, self.height))
+
+    def update(self):
+        self.rect.y += self.speedy
+        if self.rect.y > HEIGHT:
+            self.kill()
 
 def start_screen():
     screen.fill(BLACK)
     draw_text(screen, "WELCOME", 64, WIDTH // 2, HEIGHT // 2.5, RED)
-    draw_text(screen, "Press SPACE to Start", 32, WIDTH // 2, (HEIGHT // 2.5) - 20, RED)
-    draw_text(screen, "Press Q to Quit", 32, WIDTH // 2, (HEIGHT // 2.5) + 55, RED)
+    draw_text(screen, "Press SPACE to Start", 32, WIDTH // 2, (HEIGHT // 2.5) - 25, RED)
+    draw_text(screen, "Press Q to Quit", 32, WIDTH // 2, (HEIGHT // 2.5) + 60, RED)
     p.display.flip()
     waiting = True
     while waiting:
@@ -360,7 +393,7 @@ def boss_lvl():
         bullets.empty()
 
         for event in p.event.get():
-            k = pygame.key.get_pressed()
+            k = p.key.get_pressed()
             if event.type == p.QUIT:
                 p.quit()
 
@@ -400,7 +433,7 @@ status_bar = StatusBar(plr)
 meteor_spawn_delay = 500
 last_meteor_spawn = p.time.get_ticks()
 
-background = p.image.load('All Files/starfield.png')
+background = p.image.load('All Files/background.png')
 background = p.transform.scale(background, (WIDTH, HEIGHT))
 
 background_rect = background.get_rect()
@@ -414,11 +447,6 @@ life_icon = p.transform.scale(life_icon, (30, 30))
 
 shoot_sound.set_volume(0.05)
 p.mixer.music.set_volume(0.05)
-
-
-
-
-
 
 while running:
     clock.tick(FPS)
@@ -463,9 +491,6 @@ while running:
         for event in p.event.get():
             if event.type == p.QUIT:
                 running = False
-            if event.type == p.USEREVENT + 1:
-                plr.dual_shot = False
-                plr.bullet_dmg = 1
 
             if event.type == p.USEREVENT:
                 plr.shoot_delay = 500
@@ -473,7 +498,7 @@ while running:
 
         hit_player =  p.sprite.spritecollide(plr, meteors, True)
         hit_mob = p.sprite.groupcollide(meteors, bullets, False, True)
-        hit_powerups = p.sprite.spritecollide(plr, powerups, True)
+        hit_powers = p.sprite.spritecollide(plr, powerups, True)
 
 
         if hit_player:
@@ -494,27 +519,27 @@ while running:
                 if mob.lives <= 0:
                     expl = Explosion(mob.rect.center, 'lg')
                     all_sprites.add(expl)
-                    pow = Powerup(mob.rect.centerx,mob.rect.centery)
-                    if pow.rndm <= pow.spawn_percent:
-                        pow.spawn = True
-                    if pow.spawn:
-                        powerups.add(pow)
-                        all_sprites.add(pow)
-                        pow.spawn = False
+                    pow = Power(mob.rect.centerx, mob.rect.centery)
+                    if plr.lvl >= 3:
+                        if pow.ran <= pow.spawn_percent:
+                            pow.spawn = True
+                        if pow.spawn:
+                            powerups.add(pow)
+                            all_sprites.add(pow)
+                            pow.spawn = False
 
-        if hit_powerups:
-            for power in hit_powerups:
-                plr.pwup = random.choice(plr.pw)
+        if hit_powers:
+            for power in hit_powers:
+                plr.pwup = power.type
 
                 if plr.pwup == 1:
                     plr.ammo = plr.max_ammo
                 elif plr.pwup == 2:
                     plr.dual_shot = True
                     plr.bullet_dmg = 2
-                    p.time.set_timer(p.USEREVENT + 1, 5000)
                 elif plr.pwup == 3:
                     plr.shoot_delay = 250
-                    p.time.set_timer(p.USEREVENT, 3000)
+                    p.time.set_timer(p.USEREVENT, 2000)
                 elif plr.pwup == 4:
                     plr.health += 10
                     if plr.health >= MAX_HP:
@@ -540,7 +565,7 @@ while running:
 
         status_bar.update(screen)
 
-        draw_text(screen, f"Score: {plr.score}", 32, (WIDTH // 4) - 100, 10, YELLOW)
+        draw_text(screen, f"Score: {plr.score}", 32, (WIDTH // 4) - 75, 10, YELLOW)
 
         draw_lives(screen, WIDTH - 150, 10, plr.lives, life_icon)
         draw_text(screen, f"{plr.ammo}/{plr.max_ammo}", 32, 60, HEIGHT - 50, IDK)
