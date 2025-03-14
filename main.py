@@ -181,7 +181,6 @@ class Player(p.sprite.Sprite):
 
         self.reloading = False
         self.counter = 0
-
         # Player data
         self.score = 0
         self.ammo = 100
@@ -190,16 +189,15 @@ class Player(p.sprite.Sprite):
         self.mana = MAX_MANA
         self.lives = 3
 
-        self.total_score = 0
 
+        self.total_score = 0
         # Level data
         self.lvlup_threshold = 30
         self.lvl = 1
-
         # Powerups
         self.bullet_dmg = 1
-        self.speedup = False
-        self.dual_shot = False
+        self.speedup = True
+        self.dual_shot = True
         self.refilling = False
 
     def shoot(self):
@@ -207,6 +205,7 @@ class Player(p.sprite.Sprite):
             self.ammo = 0
             self.last_reload = self.now
             self.reloading = True
+            self.last_reload = self.now
             return
 
         if self.now - self.last_shot > self.shoot_delay:
@@ -245,6 +244,10 @@ class Player(p.sprite.Sprite):
             else:
                 self.shoot_delay = 350
 
+
+
+
+
     def update(self):
         self.now = p.time.get_ticks()
         k = p.key.get_pressed()
@@ -275,7 +278,7 @@ class Player(p.sprite.Sprite):
                 self.ammo = self.max_ammo
                 self.last_reload = self.now
                 self.reloading = False
-
+            return
 
 
 class Mob(p.sprite.Sprite):
