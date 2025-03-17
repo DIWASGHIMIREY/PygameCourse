@@ -81,6 +81,8 @@ class Boss(p.sprite.Sprite):
         if self.now - self.last_shot > self.shoot_delay:
             self.last_shot = self.now
             boss_bullet = Bullet(self.rect.centerx,self.rect.bottom, random.randint(-3,3))
+            boss_bullet.image = p.image.load("All Files/boss_bullet.png")
+            boss_bullet.image = p.transform.scale(boss_bullet.image, (boss_bullet.width, boss_bullet.height))
             boss_bullet.speedy *= -1
             all_sprites.add(boss_bullet)
             boss_bullets.add(boss_bullet)
@@ -98,7 +100,6 @@ class Boss(p.sprite.Sprite):
             elif self.rect.right >= WIDTH:
                 self.speedx *= -1
             self.shoot()
-
 
 class Explosion(p.sprite.Sprite):
     def __init__(self, center, size):
@@ -145,8 +146,8 @@ class Explosion(p.sprite.Sprite):
 class Bullet(p.sprite.Sprite):
     def __init__(self,pos1,pos2,speedx):
         p.sprite.Sprite.__init__(self)
-        self.height = 20
-        self.width = 10
+        self.height = 23
+        self.width = 7
         self.initial_dmg = 1
         # self.image = p.Surface((self.width,self.height))
         # self.image.fill(RED)
@@ -275,12 +276,17 @@ class Player(p.sprite.Sprite):
                     b2 = Bullet(self.rect.centerx + 10, self.rect.top, 1)
                     b1.image = p.image.load("All Files/Powerups/bullet_dual.png")
                     b2.image = p.image.load("All Files/Powerups/bullet_dual.png")
+                    b1.image = p.transform.scale(b1.image, (b1.width, b1.height))
+                    b2.image = p.transform.scale(b2.image, (b2.width, b2.height))
+
                     all_sprites.add(b1, b2)
                     bullets.add(b1, b2)
                     self.mana -= 5
                     if self.speedup and self.dual_shot:
                         b1.image = p.image.load("All Files/Powerups/bullet_dual_speedup.png")
                         b2.image = p.image.load("All Files/Powerups/bullet_dual_speedup.png")
+                        b1.image = p.transform.scale(b1.image, (b1.width, b1.height))
+                        b2.image = p.transform.scale(b2.image, (b2.width, b2.height))
                 elif self.mana < 5:
                     self.mana = 0
                     self.dual_shot = False
@@ -297,6 +303,7 @@ class Player(p.sprite.Sprite):
                 bullets.add(bullet)
                 if self.speedup:
                     bullet.image = p.image.load("All Files/Powerups/bullet_speedup.png")
+                    bullet.image = p.transform.scale(bullet.image, (bullet.width, bullet.height))
                 self.ammo -= 1
                 shoot_sound.play()
             if self.speedup:
