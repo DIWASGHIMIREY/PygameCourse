@@ -122,7 +122,7 @@ class StatusBar(p.sprite.Sprite):
         self.bar_height = 45
 
         self.margin = 5
-        self.spacing = (WIDTH//4) + 265
+        self.spacing = (WIDTH//4) + 305
 
         self.health_x = (WIDTH + 207) - self.margin - self.bar_width
         self.mana_x = self.health_x - self.bar_width - self.spacing
