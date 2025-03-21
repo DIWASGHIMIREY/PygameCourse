@@ -127,6 +127,7 @@ class Explosion(p.sprite.Sprite):
             img = p.image.load(filename)
             img_sm = p.transform.scale(img, (32, 32))
             self.expl_anim['sm'].append(img_sm)
+
             img_sm = p.transform.scale(img, (150, 150))
             self.expl_anim['lg'].append(img_sm)
 
@@ -213,7 +214,7 @@ class Player(p.sprite.Sprite):
         p.sprite.Sprite.__init__(self)
         self.height = 50
         self.width = 45
-        self.pw = [1,2,3,4]
+        # self.pw = [1,2,3,4,5,6]
 
         self.boss_kill = 0
         self.total_boss_count = 2
@@ -234,10 +235,12 @@ class Player(p.sprite.Sprite):
         self.last_shot = p.time.get_ticks()
         self.last_reload = p.time.get_ticks()
         self.last_refill = p.time.get_ticks()
+        self.last_speedup = p.time.get_ticks()
 
         self.shoot_delay = 350
         self.reload_time = 2500
         self.refill_delay = 350
+        self.speed_counter = 900
 
         self.reloading = False
         self.counter = 0
@@ -352,7 +355,9 @@ class Player(p.sprite.Sprite):
                 self.reloading = False
                 self.last_reload = self.now
             return
-
+        if self.speedx == 15:
+            if self.now - self.last_speedup > self.speed_counter:
+                self.speedx = 8
 class Mob(p.sprite.Sprite):
     def __init__(self):
         p.sprite.Sprite.__init__(self)
@@ -402,7 +407,7 @@ class Power(p.sprite.Sprite):
             3: "All Files/Powerups/speedup.png",
             4: "All Files/Powerups/health_up.png",
         }
-        self.type = random.choice([1, 2, 3, 4])
+        self.type = random.choice([1, 2, 3, 4, 5, 6])
         self.load_image()
 
         self.rect = self.image.get_rect()
@@ -477,6 +482,51 @@ def level_up():
             all_sprites.add(plr)
             last = now
 
+def boss_lvl():
+    global boss_fight, bosses, game_over
+    screen.fill(BLACK)
+    if plr.lvl == 5:
+        draw_text(screen, "Boss Level 1", 64, WIDTH // 2, (HEIGHT // 2.5) - 20, RED)
+    elif plr.lvl == 10:
+        draw_text(screen, "Boss Level 2", 64, WIDTH // 2, (HEIGHT // 2.5) - 20, RED)
+    draw_text(screen, f"Level {plr.lvl}", 32, WIDTH // 2, (HEIGHT // 2.5) + 55, RED)
+    draw_text(screen, f"Press C to Continue", 32, WIDTH // 2, (HEIGHT // 2.5) + 85, RED)
+    draw_text(screen, f"Press V to Skip", 32, WIDTH // 2, (HEIGHT // 2.5) + 110, RED)
+    p.display.flip()
+
+    waiting = True
+    while waiting:
+        clock.tick(FPS)
+        all_sprites.empty()
+        meteors.empty()
+        bullets.empty()
+
+        for event in p.event.get():
+            if event.type == p.QUIT:
+                p.quit()
+            elif event.type == p.KEYDOWN:
+                if event.key == p.K_c:
+                    waiting = False
+                    bosses.empty()
+                    boss = Boss()
+                    bosses.add(boss)
+                    all_sprites.add(boss)
+                    all_sprites.add(plr)
+                    boss_fight = True
+                elif event.key == p.K_v:
+                    waiting = False
+                    boss_fight = False
+                    if plr.lvl != 11:
+                        all_sprites.empty()
+                        meteors.empty()
+                        bullets.empty()
+                        boss_bullets.empty()
+                        bosses.empty()
+                        all_sprites.add(plr)
+                        plr.lvl += 1
+                        if plr.lvl >= 11:
+                            game_over = True
+                        level_up()
 
 
 p.init()
@@ -525,51 +575,7 @@ life_icon = p.transform.scale(life_icon, (30, 30))
 shoot_sound.set_volume(0.05)
 p.mixer.music.set_volume(0.05)
 
-def boss_lvl():
-    global boss_fight, bosses, game_over
-    screen.fill(BLACK)
-    if plr.lvl == 5:
-        draw_text(screen, "Boss Level 1", 64, WIDTH // 2, (HEIGHT // 2.5) - 20, RED)
-    elif plr.lvl == 10:
-        draw_text(screen, "Boss Level 2", 64, WIDTH // 2, (HEIGHT // 2.5) - 20, RED)
-    draw_text(screen, f"Level {plr.lvl}", 32, WIDTH // 2, (HEIGHT // 2.5) + 55, RED)
-    draw_text(screen, f"Press C to Continue", 32, WIDTH // 2, (HEIGHT // 2.5) + 85, RED)
-    draw_text(screen, f"Press V to Skip", 32, WIDTH // 2, (HEIGHT // 2.5) + 110, RED)
-    p.display.flip()
 
-    waiting = True
-    while waiting:
-        clock.tick(FPS)
-        all_sprites.empty()
-        meteors.empty()
-        bullets.empty()
-
-        for event in p.event.get():
-            if event.type == p.QUIT:
-                p.quit()
-            elif event.type == p.KEYDOWN:
-                if event.key == p.K_c:
-                    waiting = False
-                    bosses.empty()
-                    boss = Boss()
-                    bosses.add(boss)
-                    all_sprites.add(boss)
-                    all_sprites.add(plr)
-                    boss_fight = True
-                elif event.key == p.K_v:
-                    waiting = False
-                    boss_fight = False
-                    if plr.lvl != 11:
-                        all_sprites.empty()
-                        meteors.empty()
-                        bullets.empty()
-                        boss_bullets.empty()
-                        bosses.empty()
-                        all_sprites.add(plr)
-                        plr.lvl += 1
-                        if plr.lvl >= 11:
-                            game_over = True
-                        level_up()
 
 while running:
     clock.tick(FPS)
@@ -591,8 +597,13 @@ while running:
                     plr.counter = 0
                     plr.ammo = plr.max_ammo
                     all_sprites.empty()
-                    meteors.empty()
+                    for m in meteors:
+                        meteors.empty()
                     bullets.empty()
+                    for b in boss_bullets:
+                        boss_bullets.empty()
+                    powerups.empty()
+                    bosses.empty()
                     all_sprites.add(plr)
                     game_over = False
                 if event.key == p.K_q:
@@ -639,7 +650,6 @@ while running:
         if hit_mob:
             for mob in hit_mob:
                 mob.lives -= plr.bullet_dmg
-
                 mob.explosion_sound = random.choice(mob.explosion_sound_list).play()
                 if mob.lives <= 0:
                     expl = Explosion(mob.rect.center, 'lg')
@@ -655,23 +665,23 @@ while running:
 
         if hit_powers:
             for power in hit_powers:
-                plr.pwup = power.type
+                pw_up = power.type
 
-                if plr.pwup == 1:
+                if pw_up == 1:
                     plr.ammo = plr.max_ammo
-                elif plr.pwup == 2:
-                    plr.dual_shot = True
-                    if plr.mana >= 5:
-                        plr.refilling = False
+                elif pw_up == 2:
+                    if plr.mana >= 5 and not plr.refilling:
+                        plr.dual_shot = True
                     plr.bullet_dmg = 2
-                elif plr.pwup == 3:
-                    plr.speedup = True
-                    if plr.mana >= 2:
-                        plr.refilling = False
-                elif plr.pwup == 4:
+                elif pw_up == 3:
+                    if plr.mana >= 2 and not plr.refilling:
+                        plr.speedup = True
+                elif pw_up == 4:
                     plr.health += 10
                     if plr.health >= MAX_HP:
                         plr.health = MAX_HP
+                elif pw_up == 5:
+                    plr.speedx = 15
 
 
 
@@ -689,7 +699,7 @@ while running:
             for boss in hit_boss:
                 expl = Explosion(boss.rect.center,'lg')
                 all_sprites.add(expl)
-                boss.lives -= 0.5
+                boss.lives -= plr.bullet_dmg / 2
                 if boss.lives <= 0:
                     boss.kill()
                     boss_fight = False
